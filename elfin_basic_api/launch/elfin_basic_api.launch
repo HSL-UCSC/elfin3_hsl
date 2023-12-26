@@ -1,9 +1,9 @@
-<launch>
+<launch> <!-- Launch file for elfin_basic_api -->
 
-  <node name="elfin_basic_api" pkg="elfin_basic_api" type="elfin_basic_api_node" output="screen">
-    <param name="octomap_resolution" value="0.1"/>
+  <node name="elfin_basic_api" pkg="elfin_basic_api" type="elfin_basic_api_node" output="screen"> <!-- Launch elfin_basic_api_node -->
+    <param name="octomap_resolution" value="0.1"/> <!-- Octomap resolution, octomap is a 3D mapping algorithm package -->
   </node>
   
-  <node name="elfin_gui" pkg="elfin_basic_api" type="elfin_gui.py" respawn="true" output="screen" />
+  <node name="elfin_gui" pkg="elfin_basic_api" type="elfin_gui.py" respawn="true" output="screen" /> <!-- Launch elfin_gui.py -->
 
 </launch>

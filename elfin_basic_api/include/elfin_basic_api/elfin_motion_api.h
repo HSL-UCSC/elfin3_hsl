@@ -67,9 +67,22 @@ class ElfinMotionAPI
 public:
     ElfinMotionAPI(moveit::planning_interface::MoveGroupInterface *group, std::string action_name, planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor);
     void jointGoalCB(const sensor_msgs::JointStateConstPtr &msg);
+    // callback function for joint goal, which is used to control the robot to a joint goal
+    // provides a message of type sensor to tell elfin which joint setpoints to go to
+
     void cartGoalCB(const geometry_msgs::PoseStampedConstPtr &msg);
+    // callback function for cartesian goal, which is used to control the robot to a cartesian goal
+    // provides a message of type geometry_msgs::PoseStamped to tell elfin which cartesian setpoints to go to
+
     void trajectoryScaling(moveit_msgs::RobotTrajectory &trajectory, double scale);
+    // scale the velocity of the trajectory
+    // example: trajectoryScaling(trajectory, 0.5) will scale the velocity of the trajectory to half of the original velocity
+
     void cartPathGoalCB(const geometry_msgs::PoseArrayConstPtr &msg);
+    // callback function for cartesian path goal, which is used to control the robot to a cartesian path goal
+    // allows the user to specify a path in cartesian space for the robot to follow
+    // provides a message of type geometry_msgs::PoseArray to tell elfin which cartesian setpoints to go to
+
     bool getRefLink_cb(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &resp);
     bool getEndLink_cb(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &resp);
     void torquesPubTimer_cb(const ros::TimerEvent& evt);
@@ -79,6 +92,9 @@ public:
     void setEndFrames(std::string end_link);
 
     bool updateTransforms(std::string ref_link);
+    // update the transforms between the reference link and the root link, and between the end link and the tip link
+    // ref_link is the reference link of the robot, which is the link that the robot moves relative to
+    // tip link is the end link of the robot, which is the link that the robot moves to
 
 private:
     moveit::planning_interface::MoveGroupInterface *group_;

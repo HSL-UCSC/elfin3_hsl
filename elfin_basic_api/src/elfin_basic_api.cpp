@@ -41,7 +41,7 @@ Created on Mon Dec 15 10:58:42 2017
 
 namespace elfin_basic_api {
 
-ElfinBasicAPI::ElfinBasicAPI(moveit::planning_interface::MoveGroupInterface *group, std::string action_name, planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor):
+ElfinBasicAPI::ElfinBasicAPI(moveit::planning_interface::MoveGroupInterface *group, std::string action_name, planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor): 
     group_(group), action_client_(action_name, true), planning_scene_monitor_(planning_scene_monitor), local_nh_("~")
 {
     teleop_api_=new ElfinTeleopAPI(group, action_name, planning_scene_monitor);

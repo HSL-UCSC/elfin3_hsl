@@ -67,10 +67,18 @@ class ElfinTeleopAPI
 public:
     ElfinTeleopAPI(moveit::planning_interface::MoveGroupInterface *group, std::string action_name, planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor);
     void teleopJointCmdNoLimitCB(const std_msgs::Int64ConstPtr &msg);
+    // teleopJointCmdNoLimitCB is the callback function for the topic "elfin_teleop_joint_command_no_limit"
+    // used to control the robot to a joint goal without limit
 
     void teleopJointCmdCB(const std_msgs::Int64ConstPtr &msg);
+    // used to control the robot to a joint goal
+    // teleop is for controlling the robot via the joystick
+
     void teleopCartCmdCB(const std_msgs::Int64ConstPtr &msg);
+    // used to control the robot to a cartesian goal
+
     void teleopStopCB(const std_msgs::EmptyConstPtr &msg);
+    // used to stop the robot
 
     void setVelocityScaling(double data);
     void setRefFrames(std::string ref_link);
@@ -79,9 +87,11 @@ public:
     bool jointTeleop_cb(elfin_robot_msgs::SetInt16::Request &req, elfin_robot_msgs::SetInt16::Response &resp);
     bool cartTeleop_cb(elfin_robot_msgs::SetInt16::Request &req, elfin_robot_msgs::SetInt16::Response &resp);
     bool homeTeleop_cb(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &resp);
+    // home is for moving the robot to the home position, which is [0, 0, 0, 0, 0, 0]
     bool teleopStop_cb(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &resp);
 
     void PoseStampedRotation(geometry_msgs::PoseStamped &pose_stamped, const tf::Vector3 &axis, double angle);
+    // rotate the pose_stamped around the axis by the angle
 
 private:
     moveit::planning_interface::MoveGroupInterface *group_;
