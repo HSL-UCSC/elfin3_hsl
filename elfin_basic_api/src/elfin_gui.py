@@ -58,7 +58,8 @@ from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryG
 import threading
 import dynamic_reconfigure.client
 
-class MyFrame(wx.Frame):  
+class MyFrame(wx.Frame): # wx.frame is the main window
+    # creates class MyFrame, which is used to create the main window
   
     def __init__(self,parent,id):  
         the_size=(700, 700) # height from 550 change to 700

@@ -289,8 +289,9 @@ bool ElfinBasicAPI::enableRobot_cb(std_srvs::SetBool::Request &req, std_srvs::Se
         return true;
     }
 
-    req_tmp.data=true;
-    get_motion_state_client_.call(req_tmp, resp_tmp);
+    req_tmp.data=true; // if motion state is true, then the robot is moving
+    get_motion_state_client_.call(req_tmp, resp_tmp); // call the service client to get the motion state of the robot
+    // if resp_tmp.success is true, then the robot is moving
     if(resp_tmp.success)
     {
         resp.message="failed to enable the robot, it's moving";
@@ -306,7 +307,7 @@ bool ElfinBasicAPI::enableRobot_cb(std_srvs::SetBool::Request &req, std_srvs::Se
         return true;
     }
 
-    req_tmp.data=true;
+    req_tmp.data=true; // if position alignment state is true, then the robot is in teleoperation mode
     get_pos_align_state_client_.call(req_tmp, resp_tmp);
     if(!resp_tmp.success)
     {
@@ -324,12 +325,14 @@ bool ElfinBasicAPI::enableRobot_cb(std_srvs::SetBool::Request &req, std_srvs::Se
     }
 
     // Enable servos
-    raw_enable_robot_request_.data=true;
+    raw_enable_robot_request_.data=true; // if raw_enable_robot_request_.data is true, then the robot is enabled
     raw_enable_robot_client_.call(raw_enable_robot_request_, raw_enable_robot_response_);
+    // if raw_enable_robot_request_ is true, then the robot is enabled
+    // if raw_enable_robot_response_ is true, then the robot is enabled
     resp=raw_enable_robot_response_;
 
     // Start default controller
-    if(!startElfinCtrlr(resp_tmp))
+    if(!startElfinCtrlr(resp_tmp)) // default controller on gui is elfin_arm_controller, which is used to control the robot in motion planning mode
     {
         resp=resp_tmp;
         return true;
@@ -387,42 +390,45 @@ bool ElfinBasicAPI::stopActCtrlrs(std_srvs::SetBool::Response &resp)
     controller_manager_msgs::ListControllers::Request list_controllers_request;
     controller_manager_msgs::ListControllers::Response list_controllers_response;
     list_controllers_client_.call(list_controllers_request, list_controllers_response);
-    std::vector<std::string> controllers_to_stop;
-    controllers_to_stop.clear();
+    std::vector<std::string> controllers_to_stop; // add controllers from list_controllers_response to controllers_to_stop
+    controllers_to_stop.clear(); // clear the controllers_to_stop vector
 
-    controller_joint_names_.clear();
-    for(int i=0; i<list_controllers_response.controller.size(); i++)
+    controller_joint_names_.clear(); // clear the controller_joint_names_ vector
+    for(int i=0; i<list_controllers_response.controller.size(); i++) // loop through the controllers in list_controllers_response
     {
-        std::string name_tmp=list_controllers_response.controller[i].name;
-        std::vector<controller_manager_msgs::HardwareInterfaceResources> resrc_tmp=list_controllers_response.controller[i].claimed_resources;
-        if(strcmp(name_tmp.c_str(), elfin_controller_name_.c_str())==0)
+        std::string name_tmp=list_controllers_response.controller[i].name; // get the name of the controller
+        std::vector<controller_manager_msgs::HardwareInterfaceResources> resrc_tmp=list_controllers_response.controller[i].claimed_resources; // get the resources of the controller
+        // resources are the joints of the robot
+        if(strcmp(name_tmp.c_str(), elfin_controller_name_.c_str())==0) // if the name of the controller is elfin_controller_name_, which is elfin_arm_controller, then add the resources of the controller to controller_joint_names_
         {
-            for(int j=0; j<resrc_tmp.size(); j++)
+            for(int j=0; j<resrc_tmp.size(); j++) // loop through the resources of the controller
             {
                 controller_joint_names_.insert(controller_joint_names_.end(), resrc_tmp[j].resources.begin(),
                                                resrc_tmp[j].resources.end());
+                                               // insert the resources of the controller to the end of the controller_joint_names_ vector
             }
             break;
         }
     }
 
-    for(int i=0; i<list_controllers_response.controller.size(); i++)
+    for(int i=0; i<list_controllers_response.controller.size(); i++) // loop through the controllers in list_controllers_response
     {
-        std::string state_tmp=list_controllers_response.controller[i].state;
-        std::string name_tmp=list_controllers_response.controller[i].name;
+        std::string state_tmp=list_controllers_response.controller[i].state; // get the state of the controller
+        std::string name_tmp=list_controllers_response.controller[i].name; // get the name of the controller
         std::vector<controller_manager_msgs::HardwareInterfaceResources> resrc_tmp=list_controllers_response.controller[i].claimed_resources;
-        if(strcmp(state_tmp.c_str(), "running")==0)
+        // get the resources of the controller, resources include the joints of the robot
+        if(strcmp(state_tmp.c_str(), "running")==0) // if the state of the controller is running, then add the controller to controllers_to_stop
         {
-            bool break_flag=false;
-            for(int j=0; j<resrc_tmp.size(); j++)
+            bool break_flag=false; // break_flag is a boolean, which is used to break out of the loop
+            for(int j=0; j<resrc_tmp.size(); j++) // loop through the resources of the controller
             {
-                for(int k=0; k<controller_joint_names_.size(); k++)
+                for(int k=0; k<controller_joint_names_.size(); k++) // loop through the controller_joint_names_ vector
                 {
-                    if(std::find(resrc_tmp[j].resources.begin(), resrc_tmp[j].resources.end(),
+                    if(std::find(resrc_tmp[j].resources.begin(), resrc_tmp[j].resources.end(), // if the resource of the controller is in the controller_joint_names_ vector, then add the controller to controllers_to_stop
                                  controller_joint_names_[k])!=resrc_tmp[j].resources.end())
                     {
-                        break_flag=true;
-                        controllers_to_stop.push_back(name_tmp);
+                        break_flag=true; // break out of the loop
+                        controllers_to_stop.push_back(name_tmp); // add the controller to controllers_to_stop
                     }
                     if(break_flag)
                     {

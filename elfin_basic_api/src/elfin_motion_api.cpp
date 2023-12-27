@@ -44,11 +44,13 @@ namespace elfin_basic_api {
 ElfinMotionAPI::ElfinMotionAPI(moveit::planning_interface::MoveGroupInterface *group, std::string action_name, planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor):
     group_(group), action_client_(action_name, true), planning_scene_monitor_(planning_scene_monitor), motion_nh_("~")
 {
-    geometry_msgs::Vector3 gravity_v3;
-    gravity_v3.x=0;
-    gravity_v3.y=0;
-    gravity_v3.z=-9.81;
+    geometry_msgs::Vector3 gravity_v3; // gravity vector for dynamics solver
+    gravity_v3.x=0; // x component of gravity vector
+    gravity_v3.y=0; // y component of gravity vector
+    gravity_v3.z=-9.81; // z component of gravity vector
+    
     dynamics_solver_.reset(new dynamics_solver::DynamicsSolver(group->getRobotModel(), group->getName(), gravity_v3));
+    // dynamics_solver_ is a pointer to a DynamicsSolver object, which is used to compute the torques for the robot
 
     goal_.trajectory.joint_names=group_->getJointNames();
     goal_.trajectory.header.stamp.sec=0;
