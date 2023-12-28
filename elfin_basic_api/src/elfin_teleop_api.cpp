@@ -337,35 +337,35 @@ bool ElfinTeleopAPI::cartTeleop_cb(elfin_robot_msgs::SetInt16::Request &req, elf
     trajectory_msgs::JointTrajectoryPoint point_tmp;
     // point_tmp is the joint trajectory point
 
-    std::string direction;
+    std::string direction; // direction is the direction of the operation
 
-    bool ik_have_result=true;
-    for(int i=0; i<100; i++)
+    bool ik_have_result=true; // ik_have_result is used to check if the robot can move to the goal
+    for(int i=0; i<100; i++) // i is the number of the joint trajectory point
     {
-        switch (operation_num) {
+        switch (operation_num) { // operation_num is the number of the operation
         case 1:
-            current_pose.pose.position.x+=symbol*resolution_delta;
+            current_pose.pose.position.x+=symbol*resolution_delta; // add the resolution_delta to the x position of the pose
             if(symbol==1)
-                direction="X+";
+                direction="X+"; 
             else
-                direction="X-";
+                direction="X-"; 
             break;
         case 2:
-            current_pose.pose.position.y+=symbol*resolution_delta;
+            current_pose.pose.position.y+=symbol*resolution_delta; // add the resolution_delta to the y position of the pose
             if(symbol==1)
-                direction="Y+";
+                direction="Y+"; 
             else
                 direction="Y-";
             break;
         case 3:
-            current_pose.pose.position.z+=symbol*resolution_delta;
+            current_pose.pose.position.z+=symbol*resolution_delta; // add the resolution_delta to the z position of the pose
             if(symbol==1)
                 direction="Z+";
             else
                 direction="Z-";
             break;
         case 4:
-            PoseStampedRotation(current_pose, x_axis, symbol*resolution_alpha);
+            PoseStampedRotation(current_pose, x_axis, symbol*resolution_alpha); // rotate the pose around the x axis by the symbol*resolution_alpha
             if(symbol==1)
                 direction="Rx+";
             else
@@ -389,45 +389,49 @@ bool ElfinTeleopAPI::cartTeleop_cb(elfin_robot_msgs::SetInt16::Request &req, elf
             break;
         }
 
-        tf::poseMsgToTF(current_pose.pose, tf_pose_tmp);
-        tf::poseTFToEigen(tf_pose_tmp, affine_pose_tmp);
+        tf::poseMsgToTF(current_pose.pose, tf_pose_tmp); // transform the pose of the robot to the pose of the robot in tf
+        tf::poseTFToEigen(tf_pose_tmp, affine_pose_tmp); // transform the pose of the robot to the pose of the robot in Eigen
 
         affine_current_pose=affine_refToRoot * affine_pose_tmp * affine_tipToEnd;
+        // affine_current_pose is the current pose of the robot in Eigen
 
         ik_have_result=kinematic_state.setFromIK(joint_model_group, affine_current_pose, default_tip_link_);
+        // setFromIK is used to set the joint values of the robot
         if(ik_have_result)
         {
-            if(goal_.trajectory.points.size()!=i)
+            if(goal_.trajectory.points.size()!=i) // if the number of the joint trajectory point is not equal to i
                 break;
-            point_tmp.positions.resize(goal_.trajectory.joint_names.size());
-            double biggest_shift=0;
-            for(int j=0; j<goal_.trajectory.joint_names.size(); j++)
+            point_tmp.positions.resize(goal_.trajectory.joint_names.size()); // resize the joint values of the joint trajectory point
+            double biggest_shift=0; // biggest_shift is the biggest shift of the joint values
+            for(int j=0; j<goal_.trajectory.joint_names.size(); j++) // j is the number of joints
             {
-                point_tmp.positions[j]=*kinematic_state.getJointPositions(goal_.trajectory.joint_names[j]);
+                point_tmp.positions[j]=*kinematic_state.getJointPositions(goal_.trajectory.joint_names[j]); // set the joint values of the joint trajectory point
                 if(i==0)
                 {
-                    double shift_tmp=fabs(current_joint_states[j]-point_tmp.positions[j]);
-                    if(shift_tmp>biggest_shift)
-                        biggest_shift=shift_tmp;
+                    double shift_tmp=fabs(current_joint_states[j]-point_tmp.positions[j]); // shift_tmp is the shift of the joint values
+                    if(shift_tmp>biggest_shift) // if shift_tmp is greater than biggest_shift
+                        biggest_shift=shift_tmp; // set biggest_shift to shift_tmp
                 }
                 else {
                     double shift_tmp=fabs(goal_.trajectory.points[i-1].positions[j]-point_tmp.positions[j]);
-                    if(shift_tmp>biggest_shift)
-                        biggest_shift=shift_tmp;
+                    // shift_tmp is the shift of the joint values
+                    if(shift_tmp>biggest_shift) // if shift_tmp is greater than biggest_shift
+                        biggest_shift=shift_tmp; // set biggest_shift to shift_tmp
                 }
             }
             if(biggest_shift>cart_duration_*joint_speed_limit_ || plan_scene->isStateColliding(kinematic_state, group_->getName()))
+            // if biggest_shift is greater than cart_duration_*joint_speed_limit_ or the robot is in collision
                 break;
-            ros::Duration dur((i+1)*cart_duration_);
-            point_tmp.time_from_start=dur;
-            goal_.trajectory.points.push_back(point_tmp);
+            ros::Duration dur((i+1)*cart_duration_); // set the duration of the joint trajectory point
+            point_tmp.time_from_start=dur; // set the duration of the joint trajectory point
+            goal_.trajectory.points.push_back(point_tmp); // add the joint trajectory point to the goal
         }
         else
         {
             break;
         }
     }
-    if(goal_.trajectory.points.size()==0)
+    if(goal_.trajectory.points.size()==0) // if the number of the joint trajectory point is 0
     {
         resp.success=false;
         std::string result="robot can't move in ";
@@ -436,8 +440,8 @@ bool ElfinTeleopAPI::cartTeleop_cb(elfin_robot_msgs::SetInt16::Request &req, elf
         resp.message=result;
         return true;
     }
-    action_client_.sendGoal(goal_);
-    goal_.trajectory.points.clear();
+    action_client_.sendGoal(goal_); // send the goal to the action server, where the robot will move to the goal
+    goal_.trajectory.points.clear(); // clear the goal
 
     resp.success=true;
     std::string result="robot is moving in ";
@@ -449,32 +453,38 @@ bool ElfinTeleopAPI::cartTeleop_cb(elfin_robot_msgs::SetInt16::Request &req, elf
 }
 
 bool ElfinTeleopAPI::homeTeleop_cb(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &resp)
+// homeTeleop_cb is the callback function for the service server, which is used to control the robot to the home position
 {
     std::vector<double> position_current=group_->getCurrentJointValues();
+    // position_current is the current joint values of the robot
     std::vector<double> position_goal;
+    // position_goal is the goal joint values of the robot
     double biggest_shift=0;
     int biggest_shift_num;
     std::vector<double> joint_ratios;
+    // joint_ratios is the ratios of the joint values
     joint_ratios.resize(position_current.size());
+    // resize the joint values of the joint ratios
 
     if(position_current.size()!=goal_.trajectory.joint_names.size())
+    // if the size of the current joint values is not equal to the size of the joint names
     {
         resp.success=false;
         resp.message="the joints number is wrong";
         return true;
     }
 
-    for(int i=0; i<position_current.size(); i++)
+    for(int i=0; i<position_current.size(); i++) // i is the number of joints
     {
-        if(fabs(position_current[i])>biggest_shift)
+        if(fabs(position_current[i])>biggest_shift) // if the absolute value of the current joint value is greater than biggest_shift
         {
-            biggest_shift=fabs(position_current[i]);
-            biggest_shift_num=i;
+            biggest_shift=fabs(position_current[i]); // set biggest_shift to the absolute value of the current joint value
+            biggest_shift_num=i; // set biggest_shift_num to i
         }
-        position_goal.push_back(0);
+        position_goal.push_back(0); // add 0 to the goal joint values
     }
 
-    if(biggest_shift<0.001)
+    if(biggest_shift<0.001) // if biggest_shift is less than 0.001
     {
         resp.success=false;
         std::string result="Elfin is already in home position";
@@ -482,36 +492,39 @@ bool ElfinTeleopAPI::homeTeleop_cb(std_srvs::SetBool::Request &req, std_srvs::Se
         return true;
     }
 
-    for(int i=0; i<joint_ratios.size(); i++)
+    for(int i=0; i<joint_ratios.size(); i++) // i is the number of joints
     {
-        joint_ratios[i]=position_current[i]/position_current[biggest_shift_num];
+        joint_ratios[i]=position_current[i]/position_current[biggest_shift_num]; // set the joint ratios
     }
 
-    trajectory_msgs::JointTrajectoryPoint point_tmp;
+    trajectory_msgs::JointTrajectoryPoint point_tmp; // create a joint trajectory point
 
-    robot_state::RobotStatePtr kinematic_state_ptr=group_->getCurrentState();
-    robot_state::RobotState kinematic_state=*kinematic_state_ptr;
+    robot_state::RobotStatePtr kinematic_state_ptr=group_->getCurrentState(); // get the current state of the robot
+    robot_state::RobotState kinematic_state=*kinematic_state_ptr; // kinematic_state is the current state of the robot
     const robot_state::JointModelGroup* joint_model_group = kinematic_state.getJointModelGroup(group_->getName());
+    // joint_model_group is the joint model group of the robot
 
-    planning_scene_monitor_->updateFrameTransforms();
+    planning_scene_monitor_->updateFrameTransforms(); // update the transforms between the reference link and the root link, and between the end link and the tip link
     planning_scene::PlanningSceneConstPtr plan_scene=planning_scene_monitor_->getPlanningScene();
+    // planning_scene is used to get the current state of the robot
 
-    std::vector<double> position_tmp=position_current;
+    std::vector<double> position_tmp=position_current; // position_tmp is the temporary joint values of the robot
     bool collision_flag=false;
 
-    int loop_num=1;
-    double sign=biggest_shift/position_tmp[biggest_shift_num];
-    double duration_from_speed=biggest_shift/joint_speed_;
+    int loop_num=1; // loop_num is the number of the joint trajectory point
+    double sign=biggest_shift/position_tmp[biggest_shift_num]; // sign is the direction of the joint
+    double duration_from_speed=biggest_shift/joint_speed_; // duration_from_speed is the duration of the joint trajectory point
 
     while(fabs(position_goal[biggest_shift_num]-position_tmp[biggest_shift_num])/joint_speed_>0.1)
+    // if the distance between the goal joint value and the temporary joint value is greater than 0.1
     {
-        for(int i=0; i<position_tmp.size(); i++)
+        for(int i=0; i<position_tmp.size(); i++) // i is the number of joints
         {
-            position_tmp[i]-=joint_speed_*0.1*sign*joint_ratios[i];
+            position_tmp[i]-=joint_speed_*0.1*sign*joint_ratios[i]; // add the joint_speed_*0.1*sign*joint_ratios[i] to the temporary joint value
         }
 
-        kinematic_state.setJointGroupPositions(joint_model_group, position_tmp);
-        if(plan_scene->isStateColliding(kinematic_state, group_->getName()))
+        kinematic_state.setJointGroupPositions(joint_model_group, position_tmp); // set the joint values of the robot
+        if(plan_scene->isStateColliding(kinematic_state, group_->getName())) // if the robot is in collision
         {
             if(loop_num==1)
             {
@@ -524,23 +537,25 @@ bool ElfinTeleopAPI::homeTeleop_cb(std_srvs::SetBool::Request &req, std_srvs::Se
             break;
         }
 
-        point_tmp.time_from_start=ros::Duration(0.1*loop_num);
-        point_tmp.positions=position_tmp;
-        goal_.trajectory.points.push_back(point_tmp);
+        point_tmp.time_from_start=ros::Duration(0.1*loop_num); // set the duration of the joint trajectory point
+        point_tmp.positions=position_tmp; // set the joint values of the joint trajectory point
+        goal_.trajectory.points.push_back(point_tmp); // add the joint trajectory point to the goal
         loop_num++;
     }
 
     if(!collision_flag)
     {
         kinematic_state.setJointGroupPositions(joint_model_group, position_goal);
+        // set the joint values of the robot
         if(!plan_scene->isStateColliding(kinematic_state, group_->getName()))
+        // if the robot is not in collision
         {
             point_tmp.positions=position_goal;
             ros::Duration dur(duration_from_speed);
             point_tmp.time_from_start=dur;
             goal_.trajectory.points.push_back(point_tmp);
         }
-        else if(loop_num==1)
+        else if(loop_num==1) // if first iteration
         {
             resp.success=false;
             std::string result="Stop going to home position";
@@ -549,8 +564,8 @@ bool ElfinTeleopAPI::homeTeleop_cb(std_srvs::SetBool::Request &req, std_srvs::Se
         }
     }
 
-    action_client_.sendGoal(goal_);
-    goal_.trajectory.points.clear();
+    action_client_.sendGoal(goal_); // send the goal to the action server, where the robot will move to the goal
+    goal_.trajectory.points.clear(); // clear the goal
 
     resp.success=true;
     std::string result="robot is moving to home position";
@@ -570,21 +585,23 @@ bool ElfinTeleopAPI::teleopStop_cb(std_srvs::SetBool::Request &req, std_srvs::Se
 }
 
 void ElfinTeleopAPI::PoseStampedRotation(geometry_msgs::PoseStamped &pose_stamped, const tf::Vector3 &axis, double angle)
+// PoseStampedRotation is used to rotate the pose_stamped around the axis by the angle
 {
     tf::Quaternion q_1(pose_stamped.pose.orientation.x, pose_stamped.pose.orientation.y,
                                  pose_stamped.pose.orientation.z, pose_stamped.pose.orientation.w);
-    tf::Quaternion q_2(axis, angle);
-    tf::Matrix3x3 m(q_1);
-    tf::Matrix3x3 m_2(q_2);
-    m_2.operator *=(m);
-    double r, p, y;
-    m_2.getRPY(r,p,y);
+                                 // q_1 is the quaternion of the pose_stamped
+    tf::Quaternion q_2(axis, angle); // q_2 is the quaternion of the rotation
+    tf::Matrix3x3 m(q_1); // m is the rotation matrix of the pose_stamped
+    tf::Matrix3x3 m_2(q_2); // m_2 is the rotation matrix of the rotation
+    m_2.operator *=(m); // m_2 is the rotation matrix of the pose_stamped after the rotation
+    double r, p, y; // r is the roll, p is the pitch, y is the yaw
+    m_2.getRPY(r,p,y); // get the roll, pitch and yaw of the pose_stamped after the rotation
 
-    q_2.setRPY(r, p, y);
-    pose_stamped.pose.orientation.x=q_2.getX();
-    pose_stamped.pose.orientation.y=q_2.getY();
-    pose_stamped.pose.orientation.z=q_2.getZ();
-    pose_stamped.pose.orientation.w=q_2.getW();
+    q_2.setRPY(r, p, y); // set the quaternion of the rotation
+    pose_stamped.pose.orientation.x=q_2.getX(); // set the quaternion of the pose_stamped after the rotation
+    pose_stamped.pose.orientation.y=q_2.getY(); 
+    pose_stamped.pose.orientation.z=q_2.getZ(); 
+    pose_stamped.pose.orientation.w=q_2.getW(); 
 }
 
 } // end namespace elfin_basic_api
