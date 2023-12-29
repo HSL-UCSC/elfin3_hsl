@@ -43,28 +43,35 @@ namespace elfin_ethercat_driver {
 
 ElfinEtherCATDriver::ElfinEtherCATDriver(EtherCatManager *manager, std::string driver_name, const ros::NodeHandle &nh):
     driver_name_(driver_name), root_nh_(nh), ed_nh_(nh, driver_name)
+    // manager is a pointer to an EtherCatManager object, which is used to communicate with the EtherCAT slaves, slaves: motors, io modules, etc.
+    // driver_name is the name of the driver, which is used to distinguish different drivers
+    // root_nh is the root node handle, which is used to get the parameters from the parameter server
+    // ed_nh is the node handle of the driver, which is used to get the parameters from the parameter server
 {
     // Initialize slave_no_
-    int slave_no_array_default[3]={1, 2, 3};
-    std::vector<int> slave_no_default;
-    slave_no_default.clear();
-    slave_no_default.reserve(3);
-    for(int i=0; i<3; i++)
+    int slave_no_array_default[3]={1, 2, 3}; // default slave_no
+    std::vector<int> slave_no_default; // default slave_no
+    slave_no_default.clear(); // clear slave_no_default
+    slave_no_default.reserve(3); // reserve 3 elements for slave_no_default
+    for(int i=0; i<3; i++) // copy slave_no_array_default to slave_no_default
     {
-        slave_no_default.push_back(slave_no_array_default[i]);
+        slave_no_default.push_back(slave_no_array_default[i]); // copy slave_no_array_default to slave_no_default
     }
     ed_nh_.param<std::vector<int> >("slave_no", slave_no_, slave_no_default);
 
     // Initialize joint_names_
-    std::vector<std::string> joint_names_default;
+    std::vector<std::string> joint_names_default; // default joint_names
     joint_names_default.clear();
-    joint_names_default.reserve(2*slave_no_.size());
-    for(int i=0; i<slave_no_.size(); i++)
+    joint_names_default.reserve(2*slave_no_.size()); // reserve 2*slave_no_.size() elements for joint_names_default
+    for(int i=0; i<slave_no_.size(); i++) // copy joint_names_default to joint_names_default
     {
-        std::string num_1=boost::lexical_cast<std::string>(2*(i+1)-1);
+        std::string num_1=boost::lexical_cast<std::string>(2*(i+1)-1); 
+        // convert int to string, lexical_cast is a function that can convert int to string
         std::string num_2=boost::lexical_cast<std::string>(2*(i+1));
         std::string name_1="joint";
+        // name_1 is the name of the first joint of the ith motor
         std::string name_2="joint";
+        // name_2 is the name of the second joint of the ith motor
         name_1.append(num_1);
         name_2.append(num_2);
 
@@ -75,11 +82,16 @@ ElfinEtherCATDriver::ElfinEtherCATDriver(EtherCatManager *manager, std::string d
 
     // Initialize reduction_ratios_
     std::vector<double> reduction_ratios_default;
+    // default reduction_ratios
     reduction_ratios_default.clear();
+    // clear reduction_ratios_default
     reduction_ratios_default.reserve(2*slave_no_.size());
+    // reserve 2*slave_no_.size() elements for reduction_ratios_default
     for(int i=0; i<slave_no_.size(); i++)
     {
-        reduction_ratios_default.push_back(101);
+        reduction_ratios_default.push_back(101); 
+        // default reduction ratio is 101
+        // reduction ratio is the ratio of the motor's output shaft's angle to the joint's angle
         reduction_ratios_default.push_back(101);
     }
     ed_nh_.param<std::vector<double> >("reduction_ratios", reduction_ratios_, reduction_ratios_default);
@@ -101,6 +113,8 @@ ElfinEtherCATDriver::ElfinEtherCATDriver(EtherCatManager *manager, std::string d
     for(int i=0; i<slave_no_.size(); i++)
     {
         axis_position_factors_default.push_back(131072);
+        // default axis position factor is 131072
+        // axis position factor is the ratio of the motor's output shaft's angle to the joint's angle
         axis_position_factors_default.push_back(131072);
     }
     ed_nh_.param<std::vector<double> >("axis_position_factors", axis_position_factors_, axis_position_factors_default);
@@ -144,6 +158,7 @@ ElfinEtherCATDriver::ElfinEtherCATDriver(EtherCatManager *manager, std::string d
     }
 
     ed_nh_.getParam("count_zeros", count_zeros_);
+    // count_zeros is the count of the motor's output shaft when the joint is at the zero position
 
     // Check the number of joint names, reduction ratios, axis position factors
     // axis torque factors and count_zeros
@@ -178,11 +193,13 @@ ElfinEtherCATDriver::ElfinEtherCATDriver(EtherCatManager *manager, std::string d
     for(int i=0; i<count_rad_factors_.size(); i++)
     {
         count_rad_factors_[i]=reduction_ratios_[i]*axis_position_factors_[i]/(2*M_PI);
+        // count_rad_factors is the ratio of the motor's output shaft's angle to the joint's angle
     }
 
     // Initialize motion_threshold_ and pos_align_threshold_
-    motion_threshold_=5e-5;
-    pos_align_threshold_=5e-5;
+    motion_threshold_=5e-5; // motion threshold is the threshold of the motion state
+    pos_align_threshold_=5e-5; // pos_align_threshold is the threshold of the pos_align_state
+    // example: if the difference between the actual position and the command position is larger than pos_align_threshold, then the pos_align_state is false
 
     // Initialize ethercat_client_
     ethercat_clients_.clear();
@@ -193,15 +210,16 @@ ElfinEtherCATDriver::ElfinEtherCATDriver(EtherCatManager *manager, std::string d
     }
 
     // Initialize io_slave_no_
-    int io_slave_no_array_default[1]={4};
+    int io_slave_no_array_default[1]={4}; // default io_slave_no
     std::vector<int> io_slave_no_default;
     io_slave_no_default.clear();
     io_slave_no_default.reserve(1);
     for(int i=0; i<1; i++)
     {
-        io_slave_no_default.push_back(io_slave_no_array_default[i]);
+        io_slave_no_default.push_back(io_slave_no_array_default[i]); // copy io_slave_no_array_default to io_slave_no_default
     }
     ed_nh_.param<std::vector<int> >("io_slave_no", io_slave_no_, io_slave_no_default);
+    // io_slave_no is the slave number of the io module, if there is no io module, then io_slave_no is empty
 
     // Initialize ethercat_io_client_
     ethercat_io_clients_.clear();
@@ -227,17 +245,22 @@ ElfinEtherCATDriver::ElfinEtherCATDriver(EtherCatManager *manager, std::string d
 
     // Initialize ros publisher
     enable_state_pub_=ed_nh_.advertise<std_msgs::Bool>("enable_state", 1);
+    // enable_state is the state of the robot, true: enabled; false: disabled
     fault_state_pub_=ed_nh_.advertise<std_msgs::Bool>("fault_state", 1);
+    // fault_state is the state of the robot, true: there is a fault; false: there is no fault
 
     // Initialize ros timer
     status_update_period_.sec=0;
     status_update_period_.nsec=1e+8;
     status_timer_=ed_nh_.createTimer(status_update_period_, &ElfinEtherCATDriver::updateStatus, this);
     status_timer_.start();
+    // status_timer_ is a timer, which is used to update the status of the robot
+    // status will get updated every 0.1 second
 
     // Recognize the Positions
     bool recognize_flag;
     ed_nh_.param<bool>("automatic_recognition", recognize_flag, true);
+    // automatic_recognition is a parameter, which is used to determine whether the positions are recognized automatically
     if(recognize_flag)
     {
         printf("\n recognizing joint positions, please wait a few minutes ... ... \n");
