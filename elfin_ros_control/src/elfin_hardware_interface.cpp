@@ -553,7 +553,6 @@ void ElfinHWInterface::read_init()
         }
         module_infos_[i].axis2.position=-1*(pos_count2-module_infos_[i].axis2.count_zero)/module_infos_[i].axis2.count_rad_factor;
     }
-
 }
 
 void ElfinHWInterface::read_update(const ros::Time &time_now)

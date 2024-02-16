@@ -1,0 +1,4 @@
+int16 joint
+int64 target
+-----
+int64 result

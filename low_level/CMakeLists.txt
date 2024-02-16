@@ -2,7 +2,25 @@ cmake_minimum_required(VERSION 2.8.3)
 project(low_level)
 
 ## Find catkin and any catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs genmsg std_srvs)
+# find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs genmsg std_srvs)
+find_package(catkin REQUIRED COMPONENTS
+  moveit_core
+  moveit_planners_ompl
+  moveit_ros_planning
+  moveit_ros_planning_interface
+  actionlib
+  control_msgs
+  controller_manager_msgs
+  elfin_robot_msgs
+  std_srvs
+  std_msgs
+  roscpp
+  rospy
+  tf
+  tf_conversions
+  genmsg
+  dynamic_reconfigure
+)
 
 ## Declare ROS messages and services
 # add_message_files(FILES Num.msg)
@@ -17,8 +35,8 @@ catkin_package()
 ## Build talker and listener
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-add_executable(${PROJECT_NAME}_node src/low_level.cpp)
-target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES})
+# add_executable(${PROJECT_NAME}_node src/low_level.cpp)
+# target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES})
 
 # add_executable(talker src/talker.cpp)
 # target_link_libraries(talker ${catkin_LIBRARIES})

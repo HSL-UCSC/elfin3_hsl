@@ -56,6 +56,7 @@ add_service_files(
   SetString.srv
   SetInt16.srv
   SetFloat64.srv
+  SetJointTarget.srv
   ElfinIODRead.srv
   ElfinIODWrite.srv
 )
