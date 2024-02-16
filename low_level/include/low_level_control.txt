@@ -20,7 +20,7 @@ i.e. joint1 = 90 degrees so joint1 will move to
 #include <std_msgs/Int64.h>
 #include <std_msgs/Empty.h>
 #include <tf/transform_listener.h>
-#include <tf_conversations/tf_eigen.h>
+// #include <tf_conversations/tf_eigen.h>
 
 namespace low_level_control {
     
@@ -76,8 +76,8 @@ class LowLevelControl {
         double joint_speed;
         double cart_duration;
 
-        std::string end_link_;
-        std::string ref_link_;
+        // std::string end_link_;
+        // std::string ref_link_;
         std::string default_tip_link_;
         std::string root_link_;
 

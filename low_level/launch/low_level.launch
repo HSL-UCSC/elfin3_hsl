@@ -1,0 +1,3 @@
+<launch>
+  <node name="ll_node" pkg="low_level" type="low_level_node" output="screen"/>
+</launch>
